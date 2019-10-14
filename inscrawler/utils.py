@@ -44,3 +44,24 @@ def validate_posts(dict_posts):
     # assert len(set(contents)) == len(contents)
     if len(set(contents)) == len(contents):
         print("These post data should be correct.")
+
+def get_num_followers(browser):
+    div = browser.find(".k9GMp .Y8-fY .-nal3")
+    for candidate in div:
+        if candidate.get_attribute("href") and candidate.get_attribute("href").endswith("followers/"):
+            return int(candidate.find_element_by_class_name("g47SY").text.replace(",", "").replace("k", "000").replace("m", "000000").replace(".", ""))
+
+def get_num_following(browser):
+    div = browser.find(".k9GMp .Y8-fY .-nal3")
+    for candidate in div:
+        if candidate.get_attribute("href") and candidate.get_attribute("href").endswith("following/"):
+            return int(candidate.find_element_by_class_name("g47SY").text.replace(",", "").replace("k", "000").replace(".", ""))
+
+def contain_zh(text):
+    """
+        Check if string contains chinese char
+    """
+    for c in text:
+        if '\u4e00' <= c <= '\u9fa5':
+            return True
+    return False

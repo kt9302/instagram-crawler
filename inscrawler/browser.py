@@ -27,6 +27,8 @@ class Browser:
             chrome_options=chrome_options,
         )
         self.driver.implicitly_wait(5)
+        self.prev_window_handles = []
+        self.window_index = 0
 
     @property
     def page_height(self):
@@ -87,12 +89,15 @@ class Browser:
 
     def open_new_tab(self, url):
         self.driver.execute_script("window.open('%s');" %url)
-        self.driver.switch_to.window(self.driver.window_handles[1])
+        self.prev_window_handles.append(self.driver.current_window_handle)
+        self.window_index = self.window_index+1
+        self.driver.switch_to.window(self.driver.window_handles[self.window_index])
 
     def close_current_tab(self):
         self.driver.close()
-
-        self.driver.switch_to.window(self.driver.window_handles[0])
+        if self.window_index >0:
+            self.window_index = self.window_index-1
+        self.driver.switch_to.window(self.prev_window_handles.pop(-1))
 
     def __del__(self):
         try:

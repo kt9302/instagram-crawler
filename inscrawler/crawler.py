@@ -25,6 +25,13 @@ from .fetch import fetch_details
 from .utils import instagram_int
 from .utils import randmized_sleep
 from .utils import retry
+from .utils import contain_zh
+from .utils import get_num_following
+from .utils import get_num_followers
+
+from datetime import datetime
+from datetime import date
+from datetime import timedelta
 
 
 class Logging(object):
@@ -165,6 +172,72 @@ class InsCrawler(Logging):
             if heart:
                 heart.click()
                 randmized_sleep(2)
+
+            left_arrow = browser.find_one(".HBoOv")
+            if left_arrow:
+                left_arrow.click()
+                randmized_sleep(2)
+            else:
+                break
+    def auto_like_louise(self, maximum=1000):
+        self.login()
+        browser = self.browser
+        url = "%s/explore/" % (InsCrawler.URL)
+        self.browser.get(url)
+        ele_post = browser.find_one(".v1Nh3 a")
+        ele_post.click()
+
+        for _ in range(maximum):
+            post_text_elem = browser.find_one(".C7I1f.X7jCj .C4VMK span")
+            like_elem = browser.find_one(".Nm9Fw .sqdOP span")
+            #and contain_zh(post_text_elem.text)
+            if post_text_elem and like_elem  and int(like_elem.text.replace(",", "")) >2000:
+                target_elem = browser.find_one(".FPmhX.notranslate.nJAzx")
+                if target_elem:
+                    target_url = target_elem.get_attribute("href")
+                    self.browser.open_new_tab(target_url)
+                    new_browser = self.browser
+                    candidates = new_browser.find(".k9GMp .Y8-fY .-nal3")
+                    for candidate in candidates:
+                        if candidate.get_attribute("href") and candidate.get_attribute("href").endswith("followers/"):
+                            candidate.click()
+                            potential_followers = self.browser.find(".FPmhX.notranslate._0imsa")
+                            for f in potential_followers:
+                                f_url = f.get_attribute("href")
+                                self.browser.open_new_tab(f_url)
+                                # two condition here:
+                                #     1. ratio between followers and following
+                                #     2. recent post within 4 months
+                                num_followers = get_num_followers(self.browser)
+                                num_following = get_num_following(self.browser)
+                                if num_followers and ((not num_following) or (num_following > 100 and (num_following / num_followers >2))):
+                                    #check rencent post
+                                    recent_post_elem = self.browser.find_one(".v1Nh3.kIKUG._bz0w")
+                                    if recent_post_elem:
+                                        recent_post_elem.click()
+                                        time_elem = self.browser.find_one("._1o9PC.Nzb55")
+                                        if time_elem and time_elem.get_attribute("datetime"):
+                                            time_str = time_elem.get_attribute("datetime")
+                                            
+                                            today = date.today()
+                                            margin = timedelta(days = 90)
+                                            if today - margin <= datetime.strptime(time_str, '%Y-%m-%dT%H:%M:%S.%fZ').date() <= today + margin:
+                                                heart = browser.find_one(".dCJp8 .glyphsSpriteHeart__outline__24__grey_9")
+                                                print (f_url)
+                                                if heart:
+                                                    heart.click()
+                                                    randmized_sleep(2)
+                                randmized_sleep(2)
+                                self.browser.close_current_tab()
+                    randmized_sleep(2)
+                    self.browser.close_current_tab()
+                
+                
+
+            # heart = browser.find_one(".dCJp8 .glyphsSpriteHeart__outline__24__grey_9")
+            # if heart:
+            #     heart.click()
+            #     randmized_sleep(2)
 
             left_arrow = browser.find_one(".HBoOv")
             if left_arrow:
